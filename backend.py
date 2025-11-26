@@ -6,25 +6,19 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 
-# --------------------------------------------------
-# Load credentials
-# --------------------------------------------------
 load_dotenv()
 CLIENT_ID = os.getenv("client_id")
 CLIENT_SECRET = os.getenv("client_secret")
 
-# --------------------------------------------------
-# Shared global state
-# --------------------------------------------------
+
 latest_times = {
     "planned_time": None,
     "estimated_time": None,
     "minutes_left": None
 }
 
-# --------------------------------------------------
 # Helpers
-# --------------------------------------------------
+
 def _basic_auth_header():
     auth = f"{CLIENT_ID}:{CLIENT_SECRET}"
     encoded = base64.b64encode(auth.encode()).decode()
@@ -36,9 +30,8 @@ def _basic_auth_header():
 def _bearer_header(token):
     return {"Authorization": f"Bearer {token}"}
 
-# --------------------------------------------------
 # API Calls
-# --------------------------------------------------
+
 def get_access_token():
     URL = "https://ext-api.vasttrafik.se/token"
     try:

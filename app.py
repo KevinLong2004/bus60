@@ -20,5 +20,5 @@ app.register_blueprint(api_bp)
 
 if __name__ == "__main__":
     Thread(target=fetcher, daemon=True).start()
-    app.run(host="127.0.0.1", port=2200, debug=True)
+    app.run(host="0.0.0.0", port=2200, debug=True)
 
