@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <title>Nästa Buss</title>
+
+  <!-- Basic styling -->
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Inter", sans-serif;
+      background: #f4f5f7;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #333;
+    }
+
+    .card {
+      background: white;
+      padding: 2.5rem 3rem;
+      border-radius: 16px;
+      box-shadow: 0px 10px 30px rgba(0,0,0,0.08);
+      width: 90%;
+      max-width: 420px;
+      text-align: center;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+      color: #222;
+    }
+
+    .countdown {
+      font-size: 3.5rem;
+      font-weight: bold;
+      margin: 1rem 0;
+      color: #1a73e8;
+    }
+
+    .info {
+      font-size: 1.2rem;
+      margin-top: 0.4rem;
+      color: #444;
+    }
+
+    .status {
+      margin-top: 1.5rem;
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+
+    /* Different colors depending on delay */
+    .on-time   { color: #2ecc71; }
+    .delayed   { color: #e74c3c; }
+    .early     { color: #f39c12; }
+
+    footer {
+      margin-top: 1.5rem;
+      font-size: 0.85rem;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>Nästa buss från Spaldingsgatan</h1>
+
+    <div class="countdown" id="countdown-display">
+      --
+    </div>
+
+    <div class="info">
+      Planerad: <span id="planned-time">--</span>
+    </div>
+    <div class="info">
+      Beräknad: <span id="estimated-time">--</span>
+    </div>
+
+    <div class="status" id="status-message"></div>
+
+    <footer>
+      Uppdateras automatiskt varje sekund
+    </footer>
+  </div>
+
+  <script>
+    let plannedTime = null;
+    let estimatedTime = null;
+
+    // Fetch latest API data
+    async function fetchTimes() {
+      try {
+        const res = await fetch('/latest-times');
+        const data = await res.json();
+
+        if (data.planned_time) {
+          plannedTime = new Date(Date.parse(data.planned_time));
+        }
+        if (data.estimated_time) {
+          estimatedTime = new Date(Date.parse(data.estimated_time));
+        }
+
+        document.getElementById("planned-time").innerText =
+          plannedTime.toLocaleTimeString("sv-SE", {hour: "2-digit", minute: "2-digit"});
+
+        document.getElementById("estimated-time").innerText =
+          estimatedTime.toLocaleTimeString("sv-SE", {hour: "2-digit", minute: "2-digit"});
+
+        updateStatus();
+
+      } catch (err) {
+        console.log("Fel vid hämtning:", err);
+      }
+    }
+
+    // Format countdown
+    function updateCountdown() {
+      if (!estimatedTime) return;
+
+      const now = new Date();
+      const diff = estimatedTime - now;
+
+      const display = document.getElementById("countdown-display");
+
+      if (diff <= 0) {
+        display.innerText = "Avgång!";
+        return;
+      }
+
+      const minutes = Math.floor(diff / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+
+      display.innerText = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+    }
+
+    // Delay / Early status
+    function updateStatus() {
+      if (!plannedTime || !estimatedTime) return;
+
+      const diff = (estimatedTime - plannedTime) / 60000;
+      const msg = document.getElementById("status-message");
+
+      msg.className = "status"; // reset classes
+
+      if (Math.abs(diff) < 0.5) {
+        msg.innerText = "I tid";
+        msg.classList.add("on-time");
+      }
+      else if (diff > 0) {
+        msg.innerText = `Försenad ${Math.round(diff)} min`;
+        msg.classList.add("delayed");
+      }
+      else {
+        msg.innerText = `Tidigare ${Math.abs(Math.round(diff))} min`;
+        msg.classList.add("early");
+      }
+    }
+
+    // Start loops
+    fetchTimes();
+    setInterval(fetchTimes, 60000);
+    setInterval(updateCountdown, 1000);
+  </script>
+
+</body>
+</html>
